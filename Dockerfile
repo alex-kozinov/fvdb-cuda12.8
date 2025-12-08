@@ -20,7 +20,9 @@ RUN apt-get update && apt-get install -y \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
-# Install CMake
+# --------------------------------------------------------
+# 2. CMake
+# --------------------------------------------------------
 RUN mkdir ~/temp && \
     cd ~/temp && \
     wget -nv https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.sh && \
@@ -29,30 +31,30 @@ RUN mkdir ~/temp && \
     cmake --version
 
 # --------------------------------------------------------
-# 2. Install PyTorch with CUDA 12.x support
+# 3. PyTorch 2.8.0 + CUDA 12.8 и fVDB
+#    https://fvdb.ai/installation.html#pytorch-2-8-0-cuda-12-8
 # --------------------------------------------------------
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install "torch>=2.3" torchvision --index-url https://download.pytorch.org/whl/cu121
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install \
+      fvdb-reality-capture \
+      fvdb-core==0.3.0+pt28.cu128 \
+      --extra-index-url="https://d36m13axqqhiit.cloudfront.net/simple" \
+      torch==2.8.0 \
+      --extra-index-url https://download.pytorch.org/whl/cu128
 
 # --------------------------------------------------------
-# 3. Install JupyterLab
+# 4. JupyterLab
 # --------------------------------------------------------
 RUN pip install jupyterlab
 
 # --------------------------------------------------------
-# 4. Workspace & fvdb-core build (по инструкции)
+# 5. Clone fvdb-core for examples/notebooks
 # --------------------------------------------------------
 WORKDIR /workspace
-
 RUN git clone https://github.com/openvdb/fvdb-core.git /workspace/fvdb-core
 
-WORKDIR /workspace/fvdb-core
-
-RUN pip install -r env/build_requirements.txt && \
-    ./build.sh install --cuda-arch-list="7.5;8.0;9.0;10.0;12.0+PTX" -v
-
 # --------------------------------------------------------
-# 5. Start Script
+# 6. Start Script
 # --------------------------------------------------------
 COPY scripts/start.sh /start.sh
 RUN chmod 755 /start.sh
